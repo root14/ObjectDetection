@@ -33,6 +33,7 @@ android {
     buildFeatures {
         mlModelBinding = true
     }
+
 }
 
 dependencies {
