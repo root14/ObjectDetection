@@ -22,10 +22,12 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.root14.detectionsdk.R
 import com.root14.detectionsdk.ml.Detect
 import org.tensorflow.lite.DataType
+import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.image.ImageProcessor
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
+import org.tensorflow.lite.support.model.Model
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
 
 
@@ -60,7 +62,18 @@ class DetectionSurface(context: Context, attrs: AttributeSet?) : ConstraintLayou
 
         labels = FileUtil.loadLabels(context, "labelmap.txt")
 
-        model = Detect.newInstance(context)
+
+        val compatList = CompatibilityList()
+        //gpu acceleration
+        val options = if (compatList.isDelegateSupportedOnThisDevice) {
+            // if the device has a supported GPU, add the GPU delegate
+            Model.Options.Builder().setDevice(Model.Device.GPU).build()
+        } else {
+            // if the GPU is not supported, run on 4 threads
+            Model.Options.Builder().setNumThreads(4).build()
+        }
+
+        model = Detect.newInstance(context, options)
 
         val handlerThread = HandlerThread("videoThread")
         handlerThread.start()
@@ -90,7 +103,6 @@ class DetectionSurface(context: Context, attrs: AttributeSet?) : ConstraintLayou
                 bitmap = textureView.bitmap!!
 
                 val imageResult = TensorImage.fromBitmap(bitmap)
-
 
                 val imageProcessor =
                     ImageProcessor.Builder().add(ResizeOp(300, 300, ResizeOp.ResizeMethod.BILINEAR))
@@ -129,8 +141,8 @@ class DetectionSurface(context: Context, attrs: AttributeSet?) : ConstraintLayou
 
                 val h = mutable.height
                 val w = mutable.width
-                paint.textSize = h / 15f
-                paint.strokeWidth = h / 85f
+                paint.textSize = h / 30f
+                paint.strokeWidth = h / 170f
                 var x = 0
                 scores.forEachIndexed { index, fl ->
                     x = index

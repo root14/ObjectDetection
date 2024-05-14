@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.tensorflow.lite.support)
     implementation(libs.tensorflow.lite.metadata)
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.3.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
