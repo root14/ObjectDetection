@@ -1,4 +1,4 @@
-package com.root14.detectionsdk
+package com.root14.detectionsdk.util
 
 import android.app.Activity
 import android.content.Context

@@ -1,12 +1,10 @@
 package com.root14.objectdetection
 
 import android.os.Bundle
-import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
 import com.root14.detectionsdk.DetectionSdk
-import com.root14.detectionsdk.PermissionUtil
+import com.root14.detectionsdk.util.PermissionUtil
 import com.root14.detectionsdk.data.DetectionSdkLogger
-import com.root14.detectionsdk.view.DetectionSurface
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -22,6 +20,6 @@ class MainActivity : AppCompatActivity() {
 
         })
 
-        val a0 = DetectionSdk.getObjectDetector()
+        //val a0 = DetectionSdk.getObjectDetector()
     }
 }
