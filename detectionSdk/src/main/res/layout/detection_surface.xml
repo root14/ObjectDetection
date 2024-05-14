@@ -6,13 +6,15 @@
     android:layout_height="match_parent">
 
     <TextureView
-        android:id="@+id/surfaceView3"
+        android:id="@+id/textureView"
         android:layout_width="match_parent"
         android:layout_height="500dp"
         android:layout_marginTop="32dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+
 
     <Button
         android:id="@+id/button3"
@@ -21,5 +23,5 @@
         android:text="Button"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/surfaceView3" />
+        app:layout_constraintTop_toBottomOf="@+id/textureView" />
 </androidx.constraintlayout.widget.ConstraintLayout>
