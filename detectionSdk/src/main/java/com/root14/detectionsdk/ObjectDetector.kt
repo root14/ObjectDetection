@@ -20,10 +20,12 @@ import android.util.Log
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
+import android.widget.Button
 import android.widget.ImageView
 import com.root14.detectionsdk.ml.Detect
 import com.root14.detectionsdk.util.ColorUtils
 import com.root14.detectionsdk.util.PermissionUtil
+import com.root14.detectionsdk.view.DetectionSurface
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.common.FileUtil
@@ -37,19 +39,18 @@ import java.io.IOException
 import java.util.UUID
 
 class ObjectDetector internal constructor(
-    private var context: Context,
-    private var textureView: TextureView,
-    private var customView: Boolean = false,
-    private var detectionLabel: ImageView?
+    private var context: Context? = null,
+    private var textureView: TextureView? = null,
+    private var mediaButtons: Boolean? = false,
+    private var detectionLabel: ImageView? = null,
+    private var detectionSurface: DetectionSurface? = null
 ) {
-    //set true after initialized
-    private val initialized = false
     private lateinit var labels: List<String>
     private val paint = Paint()
     private val colors = ColorUtils.getColors()
     private lateinit var bitmap: Bitmap
     private lateinit var cameraDevice: CameraDevice
-    private lateinit var cameraManager: CameraManager
+    private var cameraManager: CameraManager
     private lateinit var handler: Handler
     private lateinit var model: Detect
     private lateinit var mediaRecorder: MediaRecorder
@@ -59,37 +60,54 @@ class ObjectDetector internal constructor(
     data class Builder(
         var context: Context? = null,
         var textureView: TextureView? = null,
-        var customView: Boolean = false,
+        var mediaButtons: Boolean = false,
         var detectionLabel: ImageView? = null,
+        var detectionSurface: DetectionSurface? = null
     ) {
         fun addContext(context: Context) = apply { this.context = context }
         fun addDetectionLabel(detectionLabel: ImageView) =
             apply { this.detectionLabel = detectionLabel }
 
         fun withTextureView(textureView: TextureView) = apply { this.textureView = textureView }
-        fun whitCustomView(customView: Boolean) = apply { this.customView = customView }
+        fun withDetectionSurface(detectionSurface: DetectionSurface) =
+            apply { this.detectionSurface = detectionSurface }
+
+        fun enableMediaButtons(mediaButtons: Boolean) = apply { this.mediaButtons = mediaButtons }
+
+        //eger detectionSurface ve textureview set edilmisse detectionSurface oncelik verilir
         fun build(): ObjectDetector {
-            return if (context != null) {
-                if (!customView) {
-                    if (textureView != null) {
-                        ObjectDetector(context!!, textureView!!, false, detectionLabel)
-                    } else {
-                        throw Exception("detectionsdk TextureView cannot be null!")
-                    }
-
-                } else {
-                    ObjectDetector(context!!, textureView!!, true, detectionLabel)
-                }
-
+            if (detectionSurface != null) {
+                return ObjectDetector(
+                    mediaButtons = mediaButtons, detectionSurface = detectionSurface
+                )
             } else {
-                throw Exception("detectionsdk Context cannot be null!")
+                if (context != null) {
+                    if (textureView != null && detectionLabel != null) {
+                        return ObjectDetector(
+                            context!!, textureView!!, mediaButtons, detectionLabel
+                        )
+                    } else {
+                        throw Exception("detection-sdk TextureView cannot be null!")
+                    }
+                } else {
+                    throw Exception("detection-sdk Context cannot be null!")
+                }
             }
         }
     }
 
     init {
-        if (PermissionUtil.checkPermission(context)) {
-            cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        if (detectionSurface != null) {
+            this.context = detectionSurface!!.context
+            this.textureView = detectionSurface!!.textureView
+            this.detectionLabel = detectionSurface!!.imageView
+            if (mediaButtons!!) {
+                enableMediaButtons()
+            }
+        }
+
+        if (PermissionUtil.checkPermission(context!!)) {
+            cameraManager = context!!.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             loadLabels()
             initModel()
             initHandlerThread()
@@ -99,7 +117,7 @@ class ObjectDetector internal constructor(
     }
 
     private fun loadLabels() {
-        labels = FileUtil.loadLabels(context, "labelmap.txt")
+        labels = FileUtil.loadLabels(context!!, "labelmap.txt")
     }
 
     private fun getModelOptions(): Model.Options {
@@ -114,7 +132,7 @@ class ObjectDetector internal constructor(
     }
 
     private fun initModel() {
-        model = Detect.newInstance(context, getModelOptions())
+        model = Detect.newInstance(context!!, getModelOptions())
     }
 
     private fun initHandlerThread() {
@@ -214,7 +232,7 @@ class ObjectDetector internal constructor(
                     val previewSize = calculatePreviewSize()
                     initMediaRecorder()
 
-                    val surfaceTexture = textureView.surfaceTexture
+                    val surfaceTexture = textureView!!.surfaceTexture
                     surfaceTexture?.setDefaultBufferSize(previewSize!!.width, previewSize.height)
                     val surface = Surface(surfaceTexture)
 
@@ -303,9 +321,26 @@ class ObjectDetector internal constructor(
         }
     }
 
+    fun enableMediaButtons() {
+        detectionSurface!!.findViewById<Button>(R.id.btn_stop).setOnClickListener {
+            stopRecord()
+        }
+
+        detectionSurface!!.findViewById<Button>(R.id.btn_start).setOnClickListener {
+            startRecording()
+        }
+
+        detectionSurface!!.findViewById<Button>(R.id.btn_pause).setOnClickListener {
+            pauseRecord()
+        }
+
+        detectionSurface!!.findViewById<Button>(R.id.btn_resume).setOnClickListener {
+            resumeRecord()
+        }
+    }
 
     fun bindToSurface() {
-        textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
+        textureView!!.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(
                 surface: SurfaceTexture, width: Int, height: Int
             ) {
@@ -325,7 +360,7 @@ class ObjectDetector internal constructor(
             }
 
             override fun onSurfaceTextureUpdated(surface: SurfaceTexture) {
-                bitmap = textureView.bitmap!!
+                bitmap = textureView!!.bitmap!!
                 //process image
                 val imageResult = TensorImage.fromBitmap(bitmap)
 

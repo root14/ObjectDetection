@@ -8,9 +8,6 @@ import org.koin.core.context.startKoin
 import org.koin.dsl.module
 
 object DetectionSdk {
-
-    private var initialized = false
-
     private val koinApplication: KoinApplication by lazy {
         startKoin {
             modules(baseModule)
@@ -26,12 +23,5 @@ object DetectionSdk {
             }
         }
         IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
-        initialized = true
     }
-
-    //builder object can be
-    fun getObjectDetector(): ObjectDetector {
-        return koinApplication.koin.get()
-    }
-
 }
