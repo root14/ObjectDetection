@@ -89,10 +89,10 @@ class ObjectDetector internal constructor(
 
     init {
         if (PermissionUtil.checkPermission(context)) {
+            cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
             loadLabels()
             initModel()
             initHandlerThread()
-            initMediaRecorder()
         } else {
             throw Exception("detection-sdk Grant Camera permission first!")
         }
@@ -184,10 +184,8 @@ class ObjectDetector internal constructor(
     }
 
     fun calculatePreviewSize(): Size? {
-        val characteristics =
-            cameraManager.getCameraCharacteristics(cameraManager.cameraIdList[0])
-        val map =
-            characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+        val characteristics = cameraManager.getCameraCharacteristics(cameraManager.cameraIdList[0])
+        val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
         val sizes = map?.getOutputSizes(SurfaceTexture::class.java)
 
         val targetWidth = 1920
@@ -214,6 +212,7 @@ class ObjectDetector internal constructor(
                     cameraDevice = camera
 
                     val previewSize = calculatePreviewSize()
+                    initMediaRecorder()
 
                     val surfaceTexture = textureView.surfaceTexture
                     surfaceTexture?.setDefaultBufferSize(previewSize!!.width, previewSize.height)
@@ -223,6 +222,7 @@ class ObjectDetector internal constructor(
                         cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
                     captureRequestBuilder.addTarget(surface)
                     captureRequestBuilder.addTarget(mediaRecorder.surface)
+
 
                     cameraDevice.createCaptureSession(
                         listOf(surface, mediaRecorder.surface),
@@ -252,24 +252,47 @@ class ObjectDetector internal constructor(
         )
     }
 
-
     fun pauseRecord() {
-        mediaRecorder.pause()
+        try {
+            mediaRecorder.pause()
+        } catch (e: IllegalStateException) {
+            Log.e("TAG", "IllegalStateException: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("TAG", "IOException: ${e.message}")
+        } catch (e: RuntimeException) {
+            Log.e("TAG", "RuntimeException: ${e.message}")
+        }
     }
 
     fun resumeRecord() {
-        mediaRecorder.resume()
+        try {
+            mediaRecorder.resume()
+        } catch (e: IllegalStateException) {
+            Log.e("TAG", "IllegalStateException: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("TAG", "IOException: ${e.message}")
+        } catch (e: RuntimeException) {
+            Log.e("TAG", "RuntimeException: ${e.message}")
+        }
     }
 
     fun stopRecord() {
-        mediaRecorder.stop()
-        mediaRecorder.reset()
-        mediaRecorder.release()
+        try {
+            mediaRecorder.stop()
+            mediaRecorder.reset()
+            mediaRecorder.release()
+            openCamera()
+        } catch (e: IllegalStateException) {
+            Log.e("TAG", "IllegalStateException: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("TAG", "IOException: ${e.message}")
+        } catch (e: RuntimeException) {
+            Log.e("TAG", "RuntimeException: ${e.message}")
+        }
     }
 
     fun startRecording() {
         try {
-            //mediaRecorder.prepare()
             mediaRecorder.start()
         } catch (e: IllegalStateException) {
             Log.e("TAG", "IllegalStateException while preparing MediaRecorder: ${e.message}")
@@ -282,8 +305,6 @@ class ObjectDetector internal constructor(
 
 
     fun bindToSurface() {
-        cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-
         textureView.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(
                 surface: SurfaceTexture, width: Int, height: Int
@@ -327,10 +348,8 @@ class ObjectDetector internal constructor(
                 val scores = outputs.outputFeature2AsTensorBuffer.floatArray
                 val numberOfDetection = outputs.outputFeature3AsTensorBuffer.floatArray
 
-
                 drawCanvas(scores, locations, classes)
             }
         }
     }
-
 }
