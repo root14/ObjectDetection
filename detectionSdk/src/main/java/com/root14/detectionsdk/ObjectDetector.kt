@@ -8,11 +8,16 @@ import android.graphics.Paint
 import android.graphics.RectF
 import android.graphics.SurfaceTexture
 import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
+import android.media.ImageReader
+import android.media.MediaRecorder
+import android.os.Environment
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.widget.ImageView
@@ -27,6 +32,9 @@ import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.support.image.ops.ResizeOp
 import org.tensorflow.lite.support.model.Model
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.io.File
+import java.io.IOException
+import java.util.UUID
 
 class ObjectDetector internal constructor(
     private var context: Context,
@@ -44,6 +52,7 @@ class ObjectDetector internal constructor(
     private lateinit var cameraManager: CameraManager
     private lateinit var handler: Handler
     private lateinit var model: Detect
+    private lateinit var mediaRecorder: MediaRecorder
 
 
     //should be builder
@@ -83,6 +92,7 @@ class ObjectDetector internal constructor(
             loadLabels()
             initModel()
             initHandlerThread()
+            initMediaRecorder()
         } else {
             throw Exception("detection-sdk Grant Camera permission first!")
         }
@@ -153,42 +163,123 @@ class ObjectDetector internal constructor(
         }
     }
 
+    fun initMediaRecorder() {
+        val file = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
+            "${UUID.randomUUID()}.mp4"
+        )
+        mediaRecorder = MediaRecorder()
+        val previewSize = calculatePreviewSize()
+
+        mediaRecorder.apply {
+            setVideoSource(MediaRecorder.VideoSource.SURFACE)
+            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+            setOutputFile(file)
+            setVideoEncodingBitRate(10000000)
+            setVideoFrameRate(30)
+            setVideoSize(previewSize!!.width, previewSize.height)
+            setVideoEncoder(MediaRecorder.VideoEncoder.H264)
+            prepare()
+        }
+    }
+
+    fun calculatePreviewSize(): Size? {
+        val characteristics =
+            cameraManager.getCameraCharacteristics(cameraManager.cameraIdList[0])
+        val map =
+            characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
+        val sizes = map?.getOutputSizes(SurfaceTexture::class.java)
+
+        val targetWidth = 1920
+        val targetHeight = 1080
+
+        var chosenSize: Size? = null
+        sizes?.forEach { size ->
+            if (size.width <= targetWidth && size.height <= targetHeight) {
+                if (chosenSize == null || size.width > chosenSize!!.width) {
+                    chosenSize = size
+                }
+            }
+        }
+
+        val previewSize = chosenSize ?: sizes?.get(0)
+        return previewSize
+    }
+
     @SuppressLint("MissingPermission")
     fun openCamera() {
         cameraManager.openCamera(
             cameraManager.cameraIdList[0], object : CameraDevice.StateCallback() {
-                override fun onOpened(p0: CameraDevice) {
-                    cameraDevice = p0
+                override fun onOpened(camera: CameraDevice) {
+                    cameraDevice = camera
+
+                    val previewSize = calculatePreviewSize()
 
                     val surfaceTexture = textureView.surfaceTexture
+                    surfaceTexture?.setDefaultBufferSize(previewSize!!.width, previewSize.height)
                     val surface = Surface(surfaceTexture)
 
-                    val captureRequest =
-                        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW)
-                    captureRequest.addTarget(surface)
+                    val captureRequestBuilder =
+                        cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD)
+                    captureRequestBuilder.addTarget(surface)
+                    captureRequestBuilder.addTarget(mediaRecorder.surface)
 
                     cameraDevice.createCaptureSession(
-                        listOf(surface), object : CameraCaptureSession.StateCallback() {
-                            override fun onConfigured(p0: CameraCaptureSession) {
-                                p0.setRepeatingRequest(captureRequest.build(), null, handler)
+                        listOf(surface, mediaRecorder.surface),
+                        object : CameraCaptureSession.StateCallback() {
+                            override fun onConfigured(session: CameraCaptureSession) {
+                                session.setRepeatingRequest(
+                                    captureRequestBuilder.build(), null, handler
+                                )
                             }
 
-                            override fun onConfigureFailed(p0: CameraCaptureSession) {
+                            override fun onConfigureFailed(session: CameraCaptureSession) {
+                                // Configuration failed
                             }
-                        }, handler
+                        },
+                        handler
                     )
                 }
 
-                override fun onDisconnected(p0: CameraDevice) {
-
+                override fun onDisconnected(camera: CameraDevice) {
+                    // Camera disconnected
                 }
 
-                override fun onError(p0: CameraDevice, p1: Int) {
-
+                override fun onError(camera: CameraDevice, error: Int) {
+                    // Camera error
                 }
             }, handler
         )
     }
+
+
+    fun pauseRecord() {
+        mediaRecorder.pause()
+    }
+
+    fun resumeRecord() {
+        mediaRecorder.resume()
+    }
+
+    fun stopRecord() {
+        mediaRecorder.stop()
+        mediaRecorder.reset()
+        mediaRecorder.release()
+    }
+
+    fun startRecording() {
+        try {
+            //mediaRecorder.prepare()
+            mediaRecorder.start()
+        } catch (e: IllegalStateException) {
+            Log.e("TAG", "IllegalStateException while preparing MediaRecorder: ${e.message}")
+        } catch (e: IOException) {
+            Log.e("TAG", "IOException while preparing MediaRecorder: ${e.message}")
+        } catch (e: RuntimeException) {
+            Log.e("TAG", "RuntimeException while preparing MediaRecorder: ${e.message}")
+        }
+    }
+
 
     fun bindToSurface() {
         cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
