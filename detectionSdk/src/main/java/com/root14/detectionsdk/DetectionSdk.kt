@@ -34,8 +34,13 @@ object DetectionSdk {
             viewModel.permissionGranted.collect {
                 detectionSdkLogger.eventCallback(Events.INIT_SUCCESS)
             }
+            //Notify the user
+            viewModel.pushEventFlow.collect { events ->
+                if (events != null) {
+                    detectionSdkLogger.eventCallback(events)
+                }
+            }
         }
-
     }
 
     private fun getViewModel(): MainViewModel {
