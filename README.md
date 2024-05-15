@@ -37,8 +37,16 @@ The main goal of this SDK is to provide developers with a customizable camera vi
 
 
 
+![demo-image](https://github.com/root14/ObjectDetection/assets/25272009/f9dd53c5-e660-4672-8645-c07c6c02e3b9)
 
-![Screenshot](https://https://github.com/root14/ObjectDetection/blob/master/detectionSdk/screenshot/demo-image.jpg)
+
+
+
+https://github.com/root14/ObjectDetection/assets/25272009/45c7bfee-f7da-4746-8cb7-7fcde363ab5f
+
+
+
+https://github.com/root14/ObjectDetection/assets/25272009/f6ed811b-d86c-46e4-9036-839cb540b873
 
 
 
