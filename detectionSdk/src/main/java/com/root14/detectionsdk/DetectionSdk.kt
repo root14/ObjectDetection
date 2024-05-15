@@ -6,7 +6,9 @@ import com.root14.detectionsdk.data.DetectionSdkLogger
 import com.root14.detectionsdk.data.Events
 import com.root14.detectionsdk.di.baseModule
 import com.root14.detectionsdk.viewmodel.MainViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -31,17 +33,20 @@ object DetectionSdk {
         viewModel = provideMainViewModel()
 
         viewModel.grantPermission(context)
-        viewModel.viewModelScope.launch {
-            viewModel.permissionGranted.collect {
-                detectionSdkLogger.eventCallback(Events.INIT_SUCCESS)
+        runBlocking {
+            delay(3000)
+            viewModel.viewModelScope.launch {
+                viewModel.permissionGranted.collect {
+                    detectionSdkLogger.eventCallback(Events.INIT_SUCCESS)
+                }
             }
-        }
 
-        viewModel.viewModelScope.launch {
-            //notify the user
-            viewModel.pushEventFlow.collect { events ->
-                if (events != null) {
-                    detectionSdkLogger.eventCallback(events)
+            viewModel.viewModelScope.launch {
+                //notify the user
+                viewModel.pushEventFlow.collect { events ->
+                    if (events != null) {
+                        detectionSdkLogger.eventCallback(events)
+                    }
                 }
             }
         }
