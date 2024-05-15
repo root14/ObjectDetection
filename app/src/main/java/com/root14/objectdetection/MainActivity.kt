@@ -2,12 +2,9 @@ package com.root14.objectdetection
 
 import android.os.Bundle
 import android.util.Log
-import android.view.TextureView
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.root14.detectionsdk.DetectionSdk
 import com.root14.detectionsdk.ObjectDetector
-import com.root14.detectionsdk.util.PermissionUtil
 import com.root14.detectionsdk.data.DetectionSdkLogger
 import com.root14.detectionsdk.data.Events
 import com.root14.detectionsdk.view.DetectionSurface
