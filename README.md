@@ -38,7 +38,7 @@ The main goal of this SDK is to provide developers with a customizable camera vi
 
 
 
-
+![Screenshot](https://https://github.com/root14/ObjectDetection/blob/master/detectionSdk/screenshot/demo-image.jpg)
 
 
 
