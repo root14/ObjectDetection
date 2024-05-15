@@ -1,7 +1,9 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("maven-publish")
 }
+
 
 android {
     namespace = "com.root14.detectionsdk"
@@ -19,7 +21,7 @@ android {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro", "consumer-rules.pro"
             )
         }
     }
@@ -47,4 +49,20 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.github.root14"
+            artifactId = "ObjectDetection"
+            version = "1.0"
+            pom {
+                description.set("object detect sdk")
+            }
+        }
+    }
+    repositories {
+        mavenLocal()
+    }
 }

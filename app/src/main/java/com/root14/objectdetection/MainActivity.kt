@@ -9,6 +9,7 @@ import com.root14.detectionsdk.data.DetectionSdkLogger
 import com.root14.detectionsdk.data.Events
 import com.root14.detectionsdk.view.DetectionSurface
 
+
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
