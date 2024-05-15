@@ -43,7 +43,7 @@ class ObjectDetector internal constructor(
     private var textureView: TextureView? = null,
     private var mediaButtons: Boolean? = false,
     private var detectionLabel: ImageView? = null,
-    private var detectionSurface: DetectionSurface? = null
+    private var detectionSurface: DetectionSurface? = null,
 ) {
     private lateinit var labels: List<String>
     private val paint = Paint()
@@ -155,7 +155,7 @@ class ObjectDetector internal constructor(
                 x = index
                 x *= 4
                 if (fl > 0.5) {
-                    paint.setColor(colors.get(index))
+                    paint.setColor(colors[index])
                     paint.style = Paint.Style.STROKE
                     canvas.drawRect(
                         RectF(

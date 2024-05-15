@@ -1,8 +1,12 @@
 package com.root14.detectionsdk
 
+import android.content.Context
+import androidx.lifecycle.viewModelScope
 import com.root14.detectionsdk.data.DetectionSdkLogger
-import com.root14.detectionsdk.di.IsolatedKoinContext
+import com.root14.detectionsdk.data.Events
 import com.root14.detectionsdk.di.baseModule
+import com.root14.detectionsdk.viewmodel.MainViewModel
+import kotlinx.coroutines.launch
 import org.koin.core.KoinApplication
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
@@ -13,15 +17,29 @@ object DetectionSdk {
             modules(baseModule)
         }
     }
-    //TODO check permissions
+
 
     //TODO add state logs
-    fun init(detectionSdkLogger: DetectionSdkLogger) {
+    fun init(context: Context, detectionSdkLogger: DetectionSdkLogger) {
         val dynamicModule = module {
             single {
                 detectionSdkLogger
             }
         }
-        IsolatedKoinContext.koinApp.koin.loadModules(listOf(dynamicModule))
+        koinApplication.koin.loadModules(listOf(dynamicModule))
+
+        val viewModel = getViewModel()
+        viewModel.grantPermission(context)
+        viewModel.viewModelScope.launch {
+            viewModel.permissionGranted.collect {
+                detectionSdkLogger.eventCallback(Events.INIT_SUCCESS)
+            }
+        }
+
     }
+
+    private fun getViewModel(): MainViewModel {
+        return koinApplication.koin.get()
+    }
+
 }

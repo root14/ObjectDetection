@@ -11,7 +11,7 @@ object PermissionUtil {
      * @param context for getting permission from user
      * granting camera permission for sdk functionalities
      */
-    fun grantPermission(context: Context) {
+    fun requestPermission(context: Context) {
         if (ContextCompat.checkSelfPermission(
                 context, android.Manifest.permission.CAMERA
             ) != PackageManager.PERMISSION_GRANTED
