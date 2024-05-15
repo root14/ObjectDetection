@@ -18,20 +18,10 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-
-        /*val detectionSurface = findViewById<DetectionSurface>(R.id.detection_surface)
-
-        val objectDetector =
-            ObjectDetector.Builder().withDetectionSurface(detectionSurface).enableMediaButtons(true)
-                .build()
-
-        objectDetector.bindToSurface()*/
-
         val detectionSurface = findViewById<DetectionSurface>(R.id.detectionSurface)
 
         DetectionSdk.init(this, object : DetectionSdkLogger {
             override fun eventCallback(events: Events) {
-                println("gelen vaar ${events}")
                 if (events == Events.INIT_SUCCESS) {
                     val objectDetector =
                         ObjectDetector.Builder().withDetectionSurface(detectionSurface)

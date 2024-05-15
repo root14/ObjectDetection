@@ -20,6 +20,7 @@ object DetectionSdk {
     lateinit var viewModel: MainViewModel
 
     fun init(context: Context, detectionSdkLogger: DetectionSdkLogger) {
+        //dynamic injection
         val dynamicModule = module {
             single {
                 detectionSdkLogger
@@ -37,15 +38,13 @@ object DetectionSdk {
         }
 
         viewModel.viewModelScope.launch {
-            //Notify the user
+            //notify the user
             viewModel.pushEventFlow.collect { events ->
                 if (events != null) {
                     detectionSdkLogger.eventCallback(events)
                 }
             }
         }
-
-
     }
 
     private fun provideMainViewModel(): MainViewModel {

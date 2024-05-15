@@ -58,7 +58,6 @@ class ObjectDetector internal constructor(
     private lateinit var mediaRecorder: MediaRecorder
     private var viewModel: MainViewModel = DetectionSdk.viewModel
 
-    //should be builder
     data class Builder(
         var context: Context? = null,
         var textureView: TextureView? = null,
@@ -66,17 +65,37 @@ class ObjectDetector internal constructor(
         var detectionLabel: ImageView? = null,
         var detectionSurface: DetectionSurface? = null
     ) {
+        /**
+         * @param context on camera preview mode
+         */
         fun addContext(context: Context) = apply { this.context = context }
+
+
+        /**
+         * @param detectionLabel detected objects within the camera view rectangles in real-time
+         */
         fun addDetectionLabel(detectionLabel: ImageView) =
             apply { this.detectionLabel = detectionLabel }
 
+        /**
+         * @param textureView surface to camera preview
+         */
         fun withTextureView(textureView: TextureView) = apply { this.textureView = textureView }
+
+        /**
+         * @param detectionSurface provide custom view for video recording, object detection or combine mode
+         */
         fun withDetectionSurface(detectionSurface: DetectionSurface) =
             apply { this.detectionSurface = detectionSurface }
 
+        /**
+         * @param mediaButtons true for visible media buttons false for otherwise
+         */
         fun enableMediaButtons(mediaButtons: Boolean) = apply { this.mediaButtons = mediaButtons }
 
-        //eger detectionSurface ve textureview set edilmisse detectionSurface oncelik verilir
+        /**
+         * If detectionSurface and textureView are set, detectionSurface has priority
+         */
         fun build(): ObjectDetector {
             if (detectionSurface != null) {
                 return ObjectDetector(
@@ -97,6 +116,7 @@ class ObjectDetector internal constructor(
             }
         }
     }
+
 
     init {
         if (detectionSurface != null) {
@@ -122,27 +142,40 @@ class ObjectDetector internal constructor(
         labels = FileUtil.loadLabels(context!!, "labelmap.txt")
     }
 
+    // if the device has a supported GPU, add the GPU delegate
+    // if the GPU is not supported, run on 4 threads
     private fun getModelOptions(): Model.Options {
         val compatList = CompatibilityList()
         return if (compatList.isDelegateSupportedOnThisDevice) {
-            // if the device has a supported GPU, add the GPU delegate
             Model.Options.Builder().setDevice(Model.Device.GPU).build()
         } else {
-            // if the GPU is not supported, run on 4 threads
             Model.Options.Builder().setNumThreads(4).build()
         }
     }
 
+    /**
+     *  get instance of detect tensorflow lite model
+     */
     private fun initModel() {
         model = Detect.newInstance(context!!, getModelOptions())
     }
 
+    /**
+     * create handler for camera named "videoThread"
+     */
     private fun initHandlerThread() {
         val handlerThread = HandlerThread("videoThread")
         handlerThread.start()
         handler = Handler(handlerThread.looper)
     }
 
+    /**
+     * drawing canvas on detected objects
+     * getting data from proceeded camera image
+     * @param scores
+     * @param classes
+     * @param locations
+     */
     private fun drawCanvas(scores: FloatArray, locations: FloatArray, classes: FloatArray) {
         if (detectionLabel != null) {
             val mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true)
@@ -183,6 +216,9 @@ class ObjectDetector internal constructor(
         }
     }
 
+    /**
+     * preprad mediaRecorder object for recording
+     */
     private fun initMediaRecorder() {
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
@@ -203,6 +239,9 @@ class ObjectDetector internal constructor(
         }
     }
 
+    /**
+     * calculating camera sizes
+     */
     private fun calculatePreviewSize(): Size? {
         val characteristics = cameraManager.getCameraCharacteristics(cameraManager.cameraIdList[0])
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
@@ -354,6 +393,9 @@ class ObjectDetector internal constructor(
         }
     }
 
+    /**
+     * proceed and drawing canvas on detected object from textureView`s bitmap
+     */
     fun bindToSurface() {
         textureView!!.surfaceTextureListener = object : TextureView.SurfaceTextureListener {
             override fun onSurfaceTextureAvailable(
