@@ -1,6 +1,7 @@
 package com.root14.objectdetection
 
 import android.os.Bundle
+import android.util.Log
 import android.view.TextureView
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
@@ -37,6 +38,15 @@ class MainActivity : AppCompatActivity() {
                             .enableMediaButtons(true).build()
 
                     objectDetector.bindToSurface()
+                }
+
+                when (events) {
+                    Events.START_RECORD -> Log.d("detection-sdk", "start  recording.")
+                    Events.PAUSE_RECORD -> Log.d("detection-sdk", "pause  recording.")
+                    Events.RESUME_RECORD -> Log.d("detection-sdk", "resume  recording.")
+                    Events.STOP_RECORD -> Log.d("detection-sdk", "stop  recording.")
+                    Events.INIT_SUCCESS -> Log.d("detection-sdk", "init successfully")
+                    Events.INIT_FAIL -> Log.d("detection-sdk", "init  fail.")
                 }
             }
         })
