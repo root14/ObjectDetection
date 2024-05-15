@@ -4,3 +4,7 @@ jdk:
 before_install:
   - sdk install java 18.0.2-open
   - sdk use java 18.0.2-open
+install:
+  - FILE="-Dfile=detectionSdk-release.aar"
+  - mvn install:install-file $FILE -DgroupId=com.github.root14 -DartifactId=ObjectDetection -Dversion=1.0 -Dpackaging=aar -DgeneratePom=true
+  #com.github.geek-atif                      #com-atifqamar-customtoast  #1.0
