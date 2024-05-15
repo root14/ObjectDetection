@@ -2,6 +2,8 @@ package com.root14.objectdetection
 
 import android.os.Bundle
 import android.util.Log
+import android.view.TextureView
+import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import com.root14.detectionsdk.DetectionSdk
 import com.root14.detectionsdk.ObjectDetector
@@ -16,8 +18,9 @@ class MainActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_main)
 
-        val detectionSurface = findViewById<DetectionSurface>(R.id.detectionSurface)
+       // val detectionSurface = findViewById<DetectionSurface>(R.id.detectionSurface)
 
+        /*
         DetectionSdk.init(this, object : DetectionSdkLogger {
             override fun eventCallback(events: Events) {
                 if (events == Events.INIT_SUCCESS) {
@@ -37,23 +40,23 @@ class MainActivity : AppCompatActivity() {
                     Events.INIT_FAIL -> Log.d("detection-sdk", "init  fail.")
                 }
             }
-        })
+        })*/
 
-        /*
+
         val textureView = findViewById<TextureView>(R.id.textureView)
         val detectionLabel = findViewById<ImageView>(R.id.detectionLabel)
 
         DetectionSdk.init(this, object : DetectionSdkLogger {
-        override fun eventCallback(events: Events) {
-            if (events == Events.INIT_SUCCESS) {
-                val objectDetector =
-                    ObjectDetector.Builder().withTextureView(textureView)
-                        .addDetectionLabel(detectionLabel)
-                        .addContext(this@MainActivity).build()
+            override fun eventCallback(events: Events) {
+                if (events == Events.INIT_SUCCESS) {
+                    val objectDetector =
+                        ObjectDetector.Builder().withTextureView(textureView)
+                            .addDetectionLabel(detectionLabel)
+                            .addContext(this@MainActivity).build()
 
-                objectDetector.bindToSurface()
+                    objectDetector.bindToSurface()
+                }
             }
-        }
-    })*/
+        })
     }
 }
