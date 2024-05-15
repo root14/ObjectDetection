@@ -24,7 +24,7 @@ class MainViewModel : ViewModel() {
                 PermissionUtil.requestPermission(context)
                 val isGranted = PermissionUtil.checkPermission(context)
                 emit(isGranted)
-            }.catch { e ->
+            }.catch {
                 _permissionGranted.value = false
             }.collect { isGranted ->
                 if (!isGranted) {
@@ -39,8 +39,8 @@ class MainViewModel : ViewModel() {
         get() = _pushEventFlow.asStateFlow()
 
     fun pushEvent(events: Events) {
-        flow {
-            emit(events)
+        viewModelScope.launch {
+            _pushEventFlow.emit(events)
         }
     }
 }

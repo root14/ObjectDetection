@@ -11,7 +11,6 @@ import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraDevice
 import android.hardware.camera2.CameraManager
-import android.media.ImageReader
 import android.media.MediaRecorder
 import android.os.Environment
 import android.os.Handler
@@ -22,10 +21,13 @@ import android.view.Surface
 import android.view.TextureView
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.Toast
+import com.root14.detectionsdk.data.Events
 import com.root14.detectionsdk.ml.Detect
 import com.root14.detectionsdk.util.ColorUtils
 import com.root14.detectionsdk.util.PermissionUtil
 import com.root14.detectionsdk.view.DetectionSurface
+import com.root14.detectionsdk.viewmodel.MainViewModel
 import org.tensorflow.lite.DataType
 import org.tensorflow.lite.gpu.CompatibilityList
 import org.tensorflow.lite.support.common.FileUtil
@@ -54,7 +56,7 @@ class ObjectDetector internal constructor(
     private lateinit var handler: Handler
     private lateinit var model: Detect
     private lateinit var mediaRecorder: MediaRecorder
-
+    private var viewModel: MainViewModel = DetectionSdk.viewModel
 
     //should be builder
     data class Builder(
@@ -181,7 +183,7 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun initMediaRecorder() {
+    private fun initMediaRecorder() {
         val file = File(
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES),
             "${UUID.randomUUID()}.mp4"
@@ -201,7 +203,7 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun calculatePreviewSize(): Size? {
+    private fun calculatePreviewSize(): Size? {
         val characteristics = cameraManager.getCameraCharacteristics(cameraManager.cameraIdList[0])
         val map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP)
         val sizes = map?.getOutputSizes(SurfaceTexture::class.java)
@@ -223,7 +225,7 @@ class ObjectDetector internal constructor(
     }
 
     @SuppressLint("MissingPermission")
-    fun openCamera() {
+    private fun openCamera() {
         cameraManager.openCamera(
             cameraManager.cameraIdList[0], object : CameraDevice.StateCallback() {
                 override fun onOpened(camera: CameraDevice) {
@@ -270,9 +272,11 @@ class ObjectDetector internal constructor(
         )
     }
 
-    fun pauseRecord() {
+    private fun pauseRecord() {
         try {
             mediaRecorder.pause()
+            Toast.makeText(context, "recording paused", Toast.LENGTH_SHORT).show()
+            viewModel.pushEvent(Events.PAUSE_RECORD)
         } catch (e: IllegalStateException) {
             Log.e("TAG", "IllegalStateException: ${e.message}")
         } catch (e: IOException) {
@@ -282,9 +286,11 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun resumeRecord() {
+    private fun resumeRecord() {
         try {
             mediaRecorder.resume()
+            Toast.makeText(context, "resuming to record", Toast.LENGTH_SHORT).show()
+            viewModel.pushEvent(Events.RESUME_RECORD)
         } catch (e: IllegalStateException) {
             Log.e("TAG", "IllegalStateException: ${e.message}")
         } catch (e: IOException) {
@@ -294,11 +300,13 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun stopRecord() {
+    private fun stopRecord() {
         try {
             mediaRecorder.stop()
             mediaRecorder.reset()
             mediaRecorder.release()
+            Toast.makeText(context, "record stopped", Toast.LENGTH_SHORT).show()
+            viewModel.pushEvent(Events.STOP_RECORD)
             openCamera()
         } catch (e: IllegalStateException) {
             Log.e("TAG", "IllegalStateException: ${e.message}")
@@ -309,9 +317,11 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun startRecording() {
+    private fun startRecording() {
         try {
             mediaRecorder.start()
+            Toast.makeText(context, "record started", Toast.LENGTH_SHORT).show()
+            viewModel.pushEvent(Events.START_RECORD)
         } catch (e: IllegalStateException) {
             Log.e("TAG", "IllegalStateException while preparing MediaRecorder: ${e.message}")
         } catch (e: IOException) {
@@ -321,21 +331,26 @@ class ObjectDetector internal constructor(
         }
     }
 
-    fun enableMediaButtons() {
-        detectionSurface!!.findViewById<Button>(R.id.btn_stop).setOnClickListener {
-            stopRecord()
-        }
+    /**
+     * media buttons can only usable on detectionSurface component
+     */
+    private fun enableMediaButtons() {
+        if (detectionSurface != null) {
+            detectionSurface!!.findViewById<Button>(R.id.btn_stop).setOnClickListener {
+                stopRecord()
+            }
 
-        detectionSurface!!.findViewById<Button>(R.id.btn_start).setOnClickListener {
-            startRecording()
-        }
+            detectionSurface!!.findViewById<Button>(R.id.btn_start).setOnClickListener {
+                startRecording()
+            }
 
-        detectionSurface!!.findViewById<Button>(R.id.btn_pause).setOnClickListener {
-            pauseRecord()
-        }
+            detectionSurface!!.findViewById<Button>(R.id.btn_pause).setOnClickListener {
+                pauseRecord()
+            }
 
-        detectionSurface!!.findViewById<Button>(R.id.btn_resume).setOnClickListener {
-            resumeRecord()
+            detectionSurface!!.findViewById<Button>(R.id.btn_resume).setOnClickListener {
+                resumeRecord()
+            }
         }
     }
 

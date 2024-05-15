@@ -17,9 +17,8 @@ object DetectionSdk {
             modules(baseModule)
         }
     }
+    lateinit var viewModel: MainViewModel
 
-
-    //TODO add state logs
     fun init(context: Context, detectionSdkLogger: DetectionSdkLogger) {
         val dynamicModule = module {
             single {
@@ -28,12 +27,16 @@ object DetectionSdk {
         }
         koinApplication.koin.loadModules(listOf(dynamicModule))
 
-        val viewModel = getViewModel()
+        viewModel = provideMainViewModel()
+
         viewModel.grantPermission(context)
         viewModel.viewModelScope.launch {
             viewModel.permissionGranted.collect {
                 detectionSdkLogger.eventCallback(Events.INIT_SUCCESS)
             }
+        }
+
+        viewModel.viewModelScope.launch {
             //Notify the user
             viewModel.pushEventFlow.collect { events ->
                 if (events != null) {
@@ -41,9 +44,11 @@ object DetectionSdk {
                 }
             }
         }
+
+
     }
 
-    private fun getViewModel(): MainViewModel {
+    private fun provideMainViewModel(): MainViewModel {
         return koinApplication.koin.get()
     }
 
